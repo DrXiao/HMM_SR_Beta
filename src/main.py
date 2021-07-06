@@ -9,8 +9,10 @@ import numpy as np
 import librosa
 import matplotlib.pyplot as plt
 import math
+import pickle
 
 dataset_path = Path('dataset/')
+model_params = Path('model_param')
 
 
 """
@@ -29,8 +31,8 @@ Output:
 
 
 def preprocessing(signal, sample_rate):
-    return mfcc(signal, samplerate=sample_rate, numcep=13, nfilt=40, nfft=1103, 
-                highfreq=(2595 * np.log10(1 + (sample_rate / 2) / 700)), preemph=0.95)
+    
+    return mfcc(signal, samplerate=sample_rate, nfft=1103)
 
 
 def prepareSpeakerDataset(speaker_corpus_path):
@@ -85,7 +87,7 @@ def createHMM_Model(train_dataset, kmeans_centers):
             for centers_idx in range(len(kmeans_centers)):
                 if np.linalg.norm(train_data[corpus_idx] - kmeans_centers[centers_idx]) < dic_min:
                     dic_min = np.linalg.norm(
-                        train_data[corpus_idx] - kmeans_centers[centers_idx]) < dic_min
+                        train_data[corpus_idx] - kmeans_centers[centers_idx])
                     label = centers_idx
             train_data_label.append(label)
 
@@ -134,14 +136,20 @@ def testing(hmm_models, kmeans_centers, test_dataset):
                 score_cnt += 1
             true.append(test_label)
             pred.append(predict_label)
-    print("true:", true, "pred:", pred, sep='\n')
+    #print("true:", true, "pred:", pred, sep='\n')
+    rate = 100.0 * score_cnt/corpus_num
     print("Final recognition rate is %.2f%%" %
-          (100.0 * score_cnt/corpus_num))
+          (rate))
     
     with open('prob.txt', 'a') as result:
         result.write("Final recognition rate is %.2f%%\n" %
-          (100.0 * score_cnt/corpus_num))
-    
+          (rate))
+    """
+    if rate > 80.0:
+        for speaker_label in hmm_models:
+            with open(model_params / Path('%02d.pkl'%(speaker_label)), 'wb') as file:
+                pickle.dump(hmm_models[speaker_label] , file)
+    """
 
 def main():
     speakers_train_dataset, speakers_test_dataset = prepareAllSpeakersDataset()
@@ -153,5 +161,5 @@ def main():
 if __name__ == '__main__':
     with open('prob.txt', 'w') as result:
         pass
-    for _ in range(5):
+    for _ in range(10):
         main()
