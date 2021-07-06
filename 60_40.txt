@@ -1,0 +1,1 @@
+Final recognition rate is 92.36%

@@ -13,7 +13,7 @@ import pickle
 
 dataset_path = Path('dataset/')
 model_params = Path('model_param')
-
+test_size = 0.4
 
 """
 
@@ -36,6 +36,7 @@ def preprocessing(signal, sample_rate):
 
 
 def prepareSpeakerDataset(speaker_corpus_path):
+    global test_size
     dataset = []
     print('Reading dataset...')
     all_corpus_list = os.listdir(speaker_corpus_path)
@@ -43,7 +44,7 @@ def prepareSpeakerDataset(speaker_corpus_path):
         signal, sample_rate = librosa.load(
             speaker_corpus_path / Path(corpus_name), mono=True, sr=None)
         dataset.append(preprocessing(signal, sample_rate))
-    return train_test_split(dataset, test_size=0.2, random_state=42)
+    return train_test_split(dataset, test_size=test_size, random_state=42)
 
 
 def prepareAllSpeakersDataset():
@@ -141,7 +142,8 @@ def testing(hmm_models, kmeans_centers, test_dataset):
     print("Final recognition rate is %.2f%%" %
           (rate))
     
-    with open('prob.txt', 'a') as result:
+    global test_size
+    with open('%d_%d.txt'%(100 - test_size * 100, test_size * 100), 'a') as result:
         result.write("Final recognition rate is %.2f%%\n" %
           (rate))
     """
@@ -159,7 +161,8 @@ def main():
 
 
 if __name__ == '__main__':
-    with open('prob.txt', 'w') as result:
-        pass
-    for _ in range(10):
-        main()
+    #for size in range(40, 100, 20):
+        size = 95
+        test_size = size / 100
+        for _ in range(5):
+            main()
