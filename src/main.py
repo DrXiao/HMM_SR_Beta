@@ -3,11 +3,9 @@ import os
 from sklearn.model_selection import train_test_split
 from sklearn.cluster import KMeans
 from hmmlearn import hmm
-from scipy.fftpack import dct
 from python_speech_features import mfcc
 import numpy as np
 import librosa
-import matplotlib.pyplot as plt
 import math
 import pickle
 
@@ -146,12 +144,12 @@ def testing(hmm_models, kmeans_centers, test_dataset):
     with open('%d_%d.txt'%(100 - test_size * 100, test_size * 100), 'a') as result:
         result.write("Final recognition rate is %.2f%%\n" %
           (rate))
-    """
-    if rate > 80.0:
-        for speaker_label in hmm_models:
-            with open(model_params / Path('%02d.pkl'%(speaker_label)), 'wb') as file:
-                pickle.dump(hmm_models[speaker_label] , file)
-    """
+    for speaker_label in hmm_models:
+        with open(model_params / Path('%02d.pkl'%(speaker_label)), 'wb') as file:
+            pickle.dump(hmm_models[speaker_label] , file)
+    kmeans_centers_np = np.array(kmeans_centers)
+    np.save(model_params / 'kmeans_param.npy', kmeans_centers_np)
+            
 
 def main():
     speakers_train_dataset, speakers_test_dataset = prepareAllSpeakersDataset()
@@ -162,7 +160,6 @@ def main():
 
 if __name__ == '__main__':
     #for size in range(40, 100, 20):
-        size = 95
-        test_size = size / 100
-        for _ in range(5):
-            main()
+    size = 98
+    test_size = size / 100
+    main()
