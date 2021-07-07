@@ -13,10 +13,15 @@ dataset_path = Path('dataset/')
 model_params = Path('model_param')
 test_size = 0.4
 
+
+def preprocessing(signal, sample_rate):
+    
+    return mfcc(signal, samplerate=sample_rate, nfft=1103)
+
 """
 
 Utility:
-            將語者 Dataset 切成 training set / testing set
+            將一個語者 Dataset 切成 training set / testing set
 Input:
             speaker_corpus_path : .wav file path of a spekaer.
 Output:
@@ -26,12 +31,6 @@ Output:
             All of above will be returned by train_test_split function
 
 """
-
-
-def preprocessing(signal, sample_rate):
-    
-    return mfcc(signal, samplerate=sample_rate, nfft=1103)
-
 
 def prepareSpeakerDataset(speaker_corpus_path):
     global test_size
@@ -44,6 +43,14 @@ def prepareSpeakerDataset(speaker_corpus_path):
         dataset.append(preprocessing(signal, sample_rate))
     return train_test_split(dataset, test_size=test_size, random_state=42)
 
+"""
+Utility:
+        讀取所有語者的 dataset
+Input:  
+        None
+Output:
+        所有語者的 train_dataset, test_dataset
+"""
 
 def prepareAllSpeakersDataset():
     global dataset_path
@@ -56,6 +63,15 @@ def prepareAllSpeakersDataset():
 
     return speakers_train_dataset, speakers_test_dataset
 
+
+"""
+Utility:
+        利用 train_dataset，訓練出 kmeans centers
+Input:
+        train_dataset : all speakers' dataset (dictionary)
+Output:
+        kmeans centers (2D list)
+"""
 
 def kmeansCenter(train_dataset):
     train_data = []
@@ -98,6 +114,17 @@ def createHMM_Model(train_dataset, kmeans_centers):
     print('Train finished.')
     return hmm_model
 
+"""
+Utility:
+        測試模型的準確度，並儲存模型參數
+Input:
+        hmm_models : hmm 模型 (dictionary)
+        kmeans_centers : kmeans center points (list)
+        test_dataset : 要測試的 dataset (dictionary)
+Output:
+        print the recognition rate
+        Save the parameters of models and kmeans centers
+"""
 
 def testing(hmm_models, kmeans_centers, test_dataset):
     print('Testing...')
