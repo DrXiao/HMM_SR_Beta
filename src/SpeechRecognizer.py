@@ -169,18 +169,20 @@ class SpeechRecognizer:
                 if np.linalg.norm(corpus_mfcc_data[idx] - self.__kmeans_centers[centers_idx]) < dic_min:
                     dic_min = np.linalg.norm(
                         corpus_mfcc_data[idx] - self.__kmeans_centers[centers_idx])
-            predict_label = centers_idx
+                    predict_label = centers_idx
             test_data_label.append(predict_label)
         test_data_label = np.array([test_data_label])
+        print(test_data_label)
         score_list = {}
         for model_label in self.__hmm_models:
             model = self.__hmm_models[model_label]
 
             score = model.score(test_data_label)
             score_list[model_label] = math.exp(score)
+        print(score_list)
         recognition_label = max(score_list, key=score_list.get)
         return recognition_label
-        
+
     def record(self):
         chunk = 1024
         FORMAT = pyaudio.paInt16
