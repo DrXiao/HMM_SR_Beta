@@ -11,10 +11,54 @@ from hmmlearn import hmm
 import pyaudio
 import wave
 
+"""
+Suggested arrangement of dataset directory.
 
-class SpeechRecognizer:
+Explanation of file name.
 
-    def __init__(self, model_name: str, train_dataset_path: str = "dataset", test_dataset_path: str = "", model_param_path: str = "", test_size=0, testing: bool = False):
+ex: 00_0_0.wav
+        00: the number of a speaker.
+        0 (first): the number of a vocabulary.
+        0 (second): the number of record that the speaker speaks the vocabulary.
+
+dataset ----
+            |
+            |
+            |----  00 (a directory of a speaker's dataset)
+            |       |
+            |       --------- 00_0_0.wav
+            |       --------- 00_0_1.wav
+                    .
+                    .
+                    .
+            |----  01
+                    |
+                    --------- 01_0_0.wav
+                    --------- 01_0_1.wav
+                    .
+                    .
+                    .
+and so on.
+"""
+
+
+
+class SpeakerRecognizer:
+    
+    def __init__(self, model_name: str, train_dataset_path: str = "dataset",  model_param_path: str = ""):
+        """
+        Utility:
+                Constructor of SpeakerRecognizer
+        Input:
+                model_name: the name of the object of SpeakerRecognizer.
+                train_dataset_path: the path of train dataset.
+                model_param_path: the path of pkl files.
+
+                If model_param_path is given, it will read the pkl files directly.
+                otherwise, it will train the models by reading dataset from the path train_dataset_path/
+        Output:
+                An object of SpeakerRecognizer.
+        """
         self.__hmm_models = {}
         self.__kmeans_centers = []
         self.__model_name = model_name
@@ -22,34 +66,51 @@ class SpeechRecognizer:
             print("get model_param")
             self.__readHMM_Models(Path(model_param_path))
         else:
-            dataset = self.__prepareAllSpeakersDataset(
+            train_dataset = self.__prepareAllSpeakersDataset(
                 Path(train_dataset_path))
-            if test_dataset_path == "" and test_size:
-                train_dataset, test_dataset = {}, {}
-                for label in dataset:
-                    train_dataset[label], test_dataset[label] = train_test_split(
-                        dataset[label], test_size=test_size, random_state=42)
-            else:
-                train_dataset = dataset
             self.__kmeansCenter(train_dataset)
             self.__createHMM_Model(
                 train_dataset, self.__kmeans_centers)
-        if (test_dataset_path or test_size) and testing:
-            self.__validateTestDataset(test_dataset)
-        elif testing:
-            print("Error: No any test dataset.")
 
+    
     def __preprocessing(self, signal: np.ndarray, sample_rate: int):
-
+        """
+        Utility:
+                Converting audio signal to MFCC.
+        Input:
+                signal: the audio signal.
+                sample_rate: the rate of sampling.
+        Output:
+                MFCC array.
+        """
         return mfcc(signal, samplerate=sample_rate, nfft=1103)
 
+    
     def __prepareCorpusData(self, speaker_corpus_path_name: Path):
+        """
+        Utility:
+                Loading one .wav file, getting its signal and sample rate, then
+                creating MFCC array by calling __preprocessing.
+        Input:
+                speaker_corpus_path_name: the path of a certrain .wav file.
+        Output:
+                MFCC array.
+        """
         signal, sample_rate = librosa.load(
             speaker_corpus_path_name, mono=True, sr=None)
         mfcc_data = self.__preprocessing(signal, sample_rate)
         return mfcc_data
 
+    
     def __prepareSpeakerDataset(self, speaker_corpus_path: Path):
+        """
+        Utility:
+                Preparing dataset of a speaker by calling __prepareCorpusData. 
+        Input:
+                speaker_corpus_path: the directory of a speaker's .wav files.
+        Output:
+                dataset of a speaker.
+        """
         dataset = []
         print('Reading dataset...')
         all_corpus_list = os.listdir(speaker_corpus_path)
@@ -58,7 +119,17 @@ class SpeechRecognizer:
                 speaker_corpus_path / corpus_name))
         return dataset
 
+    
     def __prepareAllSpeakersDataset(self, dataset_path: Path):
+        """
+        Utility:
+                Preparing dataset of all speaker.
+                Calling __prepareSpeakerDataset iteratively. 
+        Input:
+                dataset_path: the directory of all speaker's directories.
+        Output:
+                A dictionary of dataset of all speakers.
+        """
         label_dirs = os.listdir(dataset_path)
         speakers_dataset = {}
         for speaker_corpus_path in label_dirs:
@@ -68,7 +139,16 @@ class SpeechRecognizer:
 
         return speakers_dataset
 
+    
     def __kmeansCenter(self, train_dataset: dict):
+        """
+        Utility:
+                Getting the points of KMeans from dataset.
+        Input:
+                the dictionary of train dataset.
+        Output:
+                The points of KMeans.(an array)
+        """
         train_data = []
         for label in train_dataset:
             train_data += train_dataset[label]
@@ -116,7 +196,7 @@ class SpeechRecognizer:
         self.__kmeans_centers = np.load(
             model_param_path / 'kmeans_param.npy').tolist()
 
-    def __validateTestDataset(self, test_dataset: dict):
+    def validateTestDataset(self, test_dataset: dict):
         print('Testing...')
         true = []
         pred = []
@@ -214,6 +294,7 @@ class SpeechRecognizer:
         wf.writeframes(b''.join(speech_corpus))
         wf.close()
         mfcc_data = self.__prepareCorpusData(Path(WAVE_OUTPUT_FILENAME))
+        print(mfcc_data.shape)
         return self.__recognize(mfcc_data)
 
     def getRecognizerName(self):
@@ -221,5 +302,5 @@ class SpeechRecognizer:
 
 
 if __name__ == '__main__':
-    obj = SpeechRecognizer("speaker", model_param_path="model_param")
+    obj = SpeakerRecognizer("speaker", model_param_path="model_param")
     print(obj.record())
