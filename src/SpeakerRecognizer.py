@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+from typing import Any
 from sklearn.model_selection import train_test_split
 from python_speech_features import mfcc
 from sklearn.cluster import KMeans
@@ -21,10 +22,12 @@ ex: 00_0_0.wav
         0 (first): the number of a vocabulary.
         0 (second): the number of record that the speaker speaks the vocabulary.
 
-dataset ----
+The structure of dataset directory.
+
+dataset (a parent directory of all speakers' directories.)
             |
             |
-            |----  00 (a directory of a speaker's dataset)
+            |----  00 (a directory containing a speaker's dataset)
             |       |
             |       --------- 00_0_0.wav
             |       --------- 00_0_1.wav
@@ -45,7 +48,7 @@ and so on.
 
 class SpeakerRecognizer:
     
-    def __init__(self, model_name: str, train_dataset_path: str = "dataset",  model_param_path: str = ""):
+    def __init__(self, train_dataset_path: str = "dataset",  model_param_path: str = ""):
         """
         Utility:
                 Constructor of SpeakerRecognizer
@@ -61,7 +64,6 @@ class SpeakerRecognizer:
         """
         self.__hmm_models = {}
         self.__kmeans_centers = []
-        self.__model_name = model_name
         if model_param_path:
             print("get model_param")
             self.__readHMM_Models(Path(model_param_path))
@@ -72,8 +74,7 @@ class SpeakerRecognizer:
             self.__createHMM_Model(
                 train_dataset, self.__kmeans_centers)
 
-    
-    def __preprocessing(self, signal: np.ndarray, sample_rate: int):
+    def __preprocessing(self, signal: np.ndarray, sample_rate: int) -> Any:
         """
         Utility:
                 Converting audio signal to MFCC.
@@ -84,9 +85,8 @@ class SpeakerRecognizer:
                 MFCC array.
         """
         return mfcc(signal, samplerate=sample_rate, nfft=1103)
-
-    
-    def __prepareCorpusData(self, speaker_corpus_path_name: Path):
+  
+    def __prepareCorpusData(self, speaker_corpus_path_name: Path) -> Any:
         """
         Utility:
                 Loading one .wav file, getting its signal and sample rate, then
@@ -100,9 +100,8 @@ class SpeakerRecognizer:
             speaker_corpus_path_name, mono=True, sr=None)
         mfcc_data = self.__preprocessing(signal, sample_rate)
         return mfcc_data
-
-    
-    def __prepareSpeakerDataset(self, speaker_corpus_path: Path):
+   
+    def __prepareSpeakerDataset(self, speaker_corpus_path: Path) -> list:
         """
         Utility:
                 Preparing dataset of a speaker by calling __prepareCorpusData. 
@@ -118,9 +117,8 @@ class SpeakerRecognizer:
             dataset.append(self.__prepareCorpusData(
                 speaker_corpus_path / corpus_name))
         return dataset
-
     
-    def __prepareAllSpeakersDataset(self, dataset_path: Path):
+    def __prepareAllSpeakersDataset(self, dataset_path: Path) -> dict:
         """
         Utility:
                 Preparing dataset of all speaker.
@@ -138,16 +136,16 @@ class SpeakerRecognizer:
                 dataset_path / speaker_corpus_path)
 
         return speakers_dataset
-
     
     def __kmeansCenter(self, train_dataset: dict):
         """
         Utility:
                 Getting the points of KMeans from dataset.
         Input:
-                the dictionary of train dataset.
+                train_dataset: the dictionary of train dataset.
         Output:
                 The points of KMeans.(an array)
+                (be an attribute of object.)
         """
         train_data = []
         for label in train_dataset:
@@ -158,7 +156,17 @@ class SpeakerRecognizer:
         kmeans.fit(train_data)
         self.__kmeans_centers = kmeans.cluster_centers_
 
-    def __createHMM_Model(self, train_dataset: dict, kmeans_centers: list):
+    def __createHMM_Model(self, train_dataset: dict, kmeans_centers: list) -> None:
+        """
+        Utility:
+                Create hmm models by train_dataset and kmeans_centers.
+        Input:
+                train_dataset: train dataset
+                kmeans_centers: points of kmeans.
+        Output:
+                hmm models (containing all speakers' models)
+                (be an attribute of object.)
+        """
         states_num = 6
         print('Training models...')
         for train_label in train_dataset:
@@ -185,7 +193,17 @@ class SpeakerRecognizer:
             self.__hmm_models[train_label] = model
         print('Train finished.')
 
-    def __readHMM_Models(self, model_param_path: Path):
+    def __readHMM_Models(self, model_param_path: Path) -> None:
+        """
+        Utility:
+                Reading pkl files, then creating hmm models.
+        Input:
+                model_param_path: path of pkl files.
+        Output:
+                hmm models (containing all speakers' models.)
+                points of kmeans.
+                (Above of them become an attribute of object, respectively.)
+        """
         print("Reading models...")
         models_pkl = [model_file for model_file in os.listdir(
             model_param_path) if '.pkl' in model_file]
@@ -195,6 +213,7 @@ class SpeakerRecognizer:
                 self.__hmm_models[label] = pickle.load(file)
         self.__kmeans_centers = np.load(
             model_param_path / 'kmeans_param.npy').tolist()
+            
 
     def validateTestDataset(self, test_dataset: dict):
         print('Testing...')
@@ -237,8 +256,16 @@ class SpeakerRecognizer:
         print("Final recognition rate is %.2f%%" %
               (rate))
 
-    def __recognize(self, corpus_mfcc_data: np.ndarray):
-        print('Testing...')
+    def __recognize(self, corpus_mfcc_data: np.ndarray) -> int:
+        """
+        Utility:
+                Given MFCC series, recognizing the label of the corpus.
+        Input:
+                corpus_mfcc_data: MFCC series. (the signal converted to MFCC series.)
+        Output:
+                The label of the corpus.
+        """
+        print('Recognizing...')
         recognition_label = -1
         test_data_label = []
         for idx in range(len(corpus_mfcc_data)):
@@ -263,12 +290,22 @@ class SpeakerRecognizer:
         recognition_label = max(score_list, key=score_list.get)
         return recognition_label
 
-    def record(self):
+    def record(self) -> int:
+        """
+        Utility:
+                Recording and recognizing the label of the speaker.
+        Input:
+                None
+        Output:
+                The label of the speaker.
+        """
         chunk = 1024
         FORMAT = pyaudio.paInt16
         CHANNELS = 2
         RATE = 44100
         RECORD_SECONDS = 3
+        WAVE_OUTPUT_FILENAME = "tmp/tmp.wav"
+
         microphone_reader = pyaudio.PyAudio()
         stream = microphone_reader.open(format=FORMAT,
                                         channels=CHANNELS,
@@ -282,12 +319,10 @@ class SpeakerRecognizer:
             # By read method, it gets audio data from microphone.
             data = stream.read(chunk)   # data will be a segment of audio.
             speech_corpus.append(data)         # Let the segment be put into a list.
-        
         stream.close()
         microphone_reader.terminate()
-        WAVE_OUTPUT_FILENAME = "tmp/tmp.wav"
+        
         wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
-       
         wf.setnchannels(CHANNELS)
         wf.setsampwidth(microphone_reader.get_sample_size(FORMAT))
         wf.setframerate(RATE)
@@ -297,10 +332,8 @@ class SpeakerRecognizer:
         print(mfcc_data.shape)
         return self.__recognize(mfcc_data)
 
-    def getRecognizerName(self):
-        return self.__model_name
 
 
 if __name__ == '__main__':
-    obj = SpeakerRecognizer("speaker", model_param_path="model_param")
+    obj = SpeakerRecognizer(model_param_path="model_param")
     print(obj.record())
