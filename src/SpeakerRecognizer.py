@@ -214,8 +214,7 @@ class SpeakerRecognizer:
         self.__kmeans_centers = np.load(
             model_param_path / 'kmeans_param.npy').tolist()
             
-
-    def validateTestDataset(self, test_dataset: dict):
+    def __validateTestDataset(self, test_dataset: dict):
         print('Testing...')
         true = []
         pred = []
@@ -336,4 +335,4 @@ class SpeakerRecognizer:
 
 if __name__ == '__main__':
     obj = SpeakerRecognizer(model_param_path="model_param")
-    print(obj.record())
+    

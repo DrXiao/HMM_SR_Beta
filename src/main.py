@@ -10,8 +10,8 @@ import math
 import pickle
 
 dataset_path = Path('dataset/')
-model_params = Path('model_param')
-test_size = 0.4
+model_params = Path('model_param/')
+test_size = 100
 
 
 def preprocessing(signal, sample_rate):
@@ -39,7 +39,7 @@ def prepareSpeakerDataset(speaker_corpus_path):
     all_corpus_list = os.listdir(speaker_corpus_path)
     for corpus_name in all_corpus_list:
         signal, sample_rate = librosa.load(
-            speaker_corpus_path / Path(corpus_name), mono=True, sr=None)
+            speaker_corpus_path / Path(corpus_name),  sr=None)
         dataset.append(preprocessing(signal, sample_rate))
     return train_test_split(dataset, test_size=test_size, random_state=42)
 
@@ -114,6 +114,7 @@ def createHMM_Model(train_dataset, kmeans_centers):
     print('Train finished.')
     return hmm_model
 
+
 """
 Utility:
         測試模型的準確度，並儲存模型參數
@@ -176,17 +177,69 @@ def testing(hmm_models, kmeans_centers, test_dataset):
             pickle.dump(hmm_models[speaker_label] , file)
     kmeans_centers_np = np.array(kmeans_centers)
     np.save(model_params / 'kmeans_param.npy', kmeans_centers_np)
-            
+
+def createGMMHMM(train_dataset):
+    hmm_model = {}
+    states_num = 6
+    print('Training models...')
+    for train_label in train_dataset:
+        model = hmm.GMMHMM(
+            n_components=states_num, n_iter=20, algorithm='viterbi', tol=0.01)
+        train_data = train_dataset[train_label]
+        train_data = np.vstack(train_data)
+        
+        # print(train_data_label)
+        model.fit(train_data)
+        hmm_model[train_label] = model
+    print('Train finished.')
+    return hmm_model
+
+def testingGMMHMM(hmm_models, test_dataset):
+    print('Testing...')
+    true = []
+    pred = []
+    score_cnt = 0
+    corpus_num = 0
+    for test_label in test_dataset:
+        feature = test_dataset[test_label]
+        corpus_num += len(feature)
+        for corpus_idx in range(len(feature)):
+            # print(test_data_label)
+            score_list = {}
+            for model_label in hmm_models:
+                model = hmm_models[model_label]
+
+                score = model.score(feature[corpus_idx])
+                score_list[model_label] = score
+            predict_label = max(score_list, key=score_list.get)
+            print(score_list)
+            print("Test on true label ", test_label, ": predict result label is ", predict_label)
+            if test_label == predict_label:
+                score_cnt += 1
+            true.append(test_label)
+            pred.append(predict_label)
+    #print("true:", true, "pred:", pred, sep='\n')
+    rate = 100.0 * score_cnt/corpus_num
+    print("Final recognition rate is %.2f%%" %
+          (rate))
+    
+    global test_size
+    with open('%d_%d.txt'%(100 - test_size * 100, test_size * 100), 'a') as result:
+        result.write("Final recognition rate is %.2f%%\n" %
+          (rate))
+
+
+
 
 def main():
     speakers_train_dataset, speakers_test_dataset = prepareAllSpeakersDataset()
-    kmeans_centers = kmeansCenter(speakers_train_dataset)
-    hmm_models = createHMM_Model(speakers_train_dataset, kmeans_centers)
-    testing(hmm_models, kmeans_centers, speakers_test_dataset)
+    # kmeans_centers = kmeansCenter(speakers_train_dataset)
+    hmm_models = createGMMHMM(speakers_train_dataset)
+    testingGMMHMM(hmm_models, speakers_test_dataset)
 
 
 if __name__ == '__main__':
     #for size in range(40, 100, 20):
-    size = 98
+    size = 20
     test_size = size / 100
     main()

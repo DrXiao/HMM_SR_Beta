@@ -1,5 +1,1 @@
-Final recognition rate is 94.97%
-Final recognition rate is 94.44%
-Final recognition rate is 94.62%
-Final recognition rate is 95.26%
-Final recognition rate is 94.36%
+Final recognition rate is 19.84%
