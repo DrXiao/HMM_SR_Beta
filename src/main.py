@@ -10,8 +10,13 @@ import math
 import pickle
 
 dataset_path = Path('dataset/')
+<<<<<<< HEAD
 model_params = Path('model_param/')
 test_size = 100
+=======
+model_params = Path('model_param')
+test_size = 80
+>>>>>>> a7eb459dab5cb32dbd7abe9677a2b70fe9ab9931
 
 
 def preprocessing(signal, sample_rate):
@@ -178,6 +183,10 @@ def testing(hmm_models, kmeans_centers, test_dataset):
     kmeans_centers_np = np.array(kmeans_centers)
     np.save(model_params / 'kmeans_param.npy', kmeans_centers_np)
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> a7eb459dab5cb32dbd7abe9677a2b70fe9ab9931
 def createGMMHMM(train_dataset):
     hmm_model = {}
     states_num = 6
@@ -185,10 +194,16 @@ def createGMMHMM(train_dataset):
     for train_label in train_dataset:
         model = hmm.GMMHMM(
             n_components=states_num, n_iter=20, algorithm='viterbi', tol=0.01)
+<<<<<<< HEAD
         train_data = train_dataset[train_label]
         train_data = np.vstack(train_data)
         
         # print(train_data_label)
+=======
+        # print(train_data_label)
+        train_data = train_dataset[train_label]
+        train_data = np.vstack(train_data)
+>>>>>>> a7eb459dab5cb32dbd7abe9677a2b70fe9ab9931
         model.fit(train_data)
         hmm_model[train_label] = model
     print('Train finished.')
@@ -196,6 +211,10 @@ def createGMMHMM(train_dataset):
 
 def testingGMMHMM(hmm_models, test_dataset):
     print('Testing...')
+<<<<<<< HEAD
+=======
+    global test_size
+>>>>>>> a7eb459dab5cb32dbd7abe9677a2b70fe9ab9931
     true = []
     pred = []
     score_cnt = 0
@@ -204,10 +223,15 @@ def testingGMMHMM(hmm_models, test_dataset):
         feature = test_dataset[test_label]
         corpus_num += len(feature)
         for corpus_idx in range(len(feature)):
+<<<<<<< HEAD
+=======
+            
+>>>>>>> a7eb459dab5cb32dbd7abe9677a2b70fe9ab9931
             # print(test_data_label)
             score_list = {}
             for model_label in hmm_models:
                 model = hmm_models[model_label]
+<<<<<<< HEAD
 
                 score = model.score(feature[corpus_idx])
                 score_list[model_label] = score
@@ -216,6 +240,15 @@ def testingGMMHMM(hmm_models, test_dataset):
             print("Test on true label ", test_label, ": predict result label is ", predict_label)
             if test_label == predict_label:
                 score_cnt += 1
+=======
+                score_list[model_label] = model.score(feature[corpus_idx])
+            predict_label = max(score_list, key=score_list.get)
+            if test_label == predict_label:
+                score_cnt += 1
+            else:
+                print(score_list)
+                print("Test on true label ", test_label, ": predict result label is ", predict_label)
+>>>>>>> a7eb459dab5cb32dbd7abe9677a2b70fe9ab9931
             true.append(test_label)
             pred.append(predict_label)
     #print("true:", true, "pred:", pred, sep='\n')
@@ -223,6 +256,7 @@ def testingGMMHMM(hmm_models, test_dataset):
     print("Final recognition rate is %.2f%%" %
           (rate))
     
+<<<<<<< HEAD
     global test_size
     with open('%d_%d.txt'%(100 - test_size * 100, test_size * 100), 'a') as result:
         result.write("Final recognition rate is %.2f%%\n" %
@@ -243,3 +277,23 @@ if __name__ == '__main__':
     size = 20
     test_size = size / 100
     main()
+=======
+    with open('%d_%d.txt'%(100 - test_size * 100, test_size * 100), 'a') as result:
+        result.write("Final recognition rate is %.2f%%\n" %
+          (rate))
+
+def main():
+    speakers_train_dataset, speakers_test_dataset = prepareAllSpeakersDataset()
+    #kmeans_centers = kmeansCenter(speakers_train_dataset)
+    #hmm_models = createHMM_Model(speakers_train_dataset, kmeans_centers)
+    #testing(hmm_models, kmeans_centers, speakers_test_dataset)
+    hmm_models = createGMMHMM(speakers_train_dataset)
+    testingGMMHMM(hmm_models, speakers_test_dataset)
+
+if __name__ == '__main__':
+    for size in [20, 40, 60, 80, 97, 98, 99]:
+        # size = 80
+        print("%d_%d"%(100 - size, size))
+        test_size = size / 100
+        main()
+>>>>>>> a7eb459dab5cb32dbd7abe9677a2b70fe9ab9931

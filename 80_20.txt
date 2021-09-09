@@ -8,6 +8,7 @@ Final recognition rate is 98.19%
 Final recognition rate is 98.75%
 Final recognition rate is 98.19%
 Final recognition rate is 97.78%
+<<<<<<< HEAD
 Final recognition rate is 62.70%
 Final recognition rate is 82.90%
 Final recognition rate is 35.94%
@@ -16,3 +17,8 @@ Final recognition rate is 67.29%
 Final recognition rate is 19.83%
 Final recognition rate is 19.83%
 Final recognition rate is 19.83%
+=======
+Final recognition rate is 0.00%
+Final recognition rate is 100.00%
+Final recognition rate is 100.00%
+>>>>>>> a7eb459dab5cb32dbd7abe9677a2b70fe9ab9931
