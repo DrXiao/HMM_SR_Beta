@@ -8,3 +8,6 @@ Final recognition rate is 98.19%
 Final recognition rate is 98.75%
 Final recognition rate is 98.19%
 Final recognition rate is 97.78%
+Final recognition rate is 0.00%
+Final recognition rate is 100.00%
+Final recognition rate is 100.00%

@@ -195,6 +195,7 @@ def createGMMHMM(train_dataset):
 
 def testingGMMHMM(hmm_models, test_dataset):
     print('Testing...')
+    global test_size
     true = []
     pred = []
     score_cnt = 0
@@ -210,10 +211,11 @@ def testingGMMHMM(hmm_models, test_dataset):
                 model = hmm_models[model_label]
                 score_list[model_label] = model.score(feature[corpus_idx])
             predict_label = max(score_list, key=score_list.get)
-            print(score_list)
-            print("Test on true label ", test_label, ": predict result label is ", predict_label)
             if test_label == predict_label:
                 score_cnt += 1
+            else:
+                print(score_list)
+                print("Test on true label ", test_label, ": predict result label is ", predict_label)
             true.append(test_label)
             pred.append(predict_label)
     #print("true:", true, "pred:", pred, sep='\n')
@@ -221,7 +223,6 @@ def testingGMMHMM(hmm_models, test_dataset):
     print("Final recognition rate is %.2f%%" %
           (rate))
     
-    global test_size
     with open('%d_%d.txt'%(100 - test_size * 100, test_size * 100), 'a') as result:
         result.write("Final recognition rate is %.2f%%\n" %
           (rate))
@@ -235,7 +236,8 @@ def main():
     testingGMMHMM(hmm_models, speakers_test_dataset)
 
 if __name__ == '__main__':
-    #for size in range(40, 100, 20):
-    size = 98
-    test_size = size / 100
-    main()
+    for size in [20, 40, 60, 80, 97, 98, 99]:
+        # size = 80
+        print("%d_%d"%(100 - size, size))
+        test_size = size / 100
+        main()
