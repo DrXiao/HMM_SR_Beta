@@ -13,24 +13,56 @@ dataset_path = Path("dataset/")
 test_size = 0.98
 
 
-def buildDataset():
+def buildDataset(featurePath):
     # 切割檔名
-    global test_size
     trainData, testData = [], []
     trainDataset, testDataset = {}, {}
-    for speaker in os.listdir(dataset_path):
-        for label in range(8):
-            if not trainDataset.get(label):
-                trainDataset[label] = []
-                testDataset[label] = []
-            mfcc_data = [librosa.load(dataset_path / speaker / file)
-                         for file in os.listdir(dataset_path / speaker) if file.find("_%d_" % (label)) != -1]
-            mfcc_data = [mfcc(corpus[0], samplerate=corpus[1], nfft=1103) for corpus in mfcc_data]
+    for labelNumber in os.listdir(featurePath):
+        datasetPath = featurePath + labelNumber + '/'
+        # print(datasetPath)
+        fileList = [fileName for fileName in os.listdir(datasetPath) if os.path.splitext(fileName)[1] == '.pickle']
+        trainData, testData = train_test_split(fileList, test_size=test_size)
+
+        for data in trainData:
+            split1 = data.split(".")
+            name_split = list(map(int, split1[0].split("_")))
             
-            trainData, testData = train_test_split(
-                mfcc_data, test_size=test_size)
-            trainDataset[label] += trainData
-            testDataset[label] += testData
+            label = name_split[1]
+            with open(datasetPath + data, 'rb') as f:
+                feature = pickle.load(f)
+            print("training data:", data, "\n")
+            if label not in trainDataset.keys():
+                trainDataset[label] = []
+                    
+            trainDataset[label].append(feature)
+            
+            '''
+            if(name_split[2] < 80): # 編號80以下當作訓練資料
+                print("training data:", fileList[amount], "\n")
+                if label not in trainDataset.keys():
+                    trainDataset[label] = []
+                    
+                trainDataset[label].append(feature)    
+            
+            else: # 80以上的是測試集
+                print("testing data:", fileList[amount], "\n")
+                if label not in testDataset.keys():
+                    testDataset[label] = []
+                    
+                testDataset[label].append(feature)
+            '''
+        for data in testData:
+            split1 = data.split(".")
+            name_split = list(map(int, split1[0].split("_")))
+            
+            label = name_split[1]
+            with open(datasetPath + data, 'rb') as f:
+                feature = pickle.load(f)
+            print("testing data:", data, "\n")
+            if label not in testDataset.keys():
+                testDataset[label] = []
+                    
+            testDataset[label].append(feature)    
     
     return trainDataset, testDataset
 
@@ -105,13 +137,13 @@ def dataTest(testDataset, hmmModels):
             print("predict result :", int(idx) == int(trueLabel))
 
     print(round(correctCnt*100/totalCnt, 3), '%')
-    with open("02_train02_test98.txt", "a") as file:
+    with open("2048mfcc.txt", "a") as file:
         file.write("%f%%\n" % (round(correctCnt*100/totalCnt, 3)))
 
 
 def main():
-    for i in range(5):
-        trainDataset, testDataset = buildDataset()
+    for i in ["00", "01", "02", "03", "06"]:
+        trainDataset, testDataset = buildDataset("features/"+i+"/")
         print("Finish prepare the training data\n")
         print("Model Training...\n")
         hmmModels = HMMTrain(trainDataset)

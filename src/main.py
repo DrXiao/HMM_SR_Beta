@@ -10,18 +10,14 @@ import math
 import pickle
 
 dataset_path = Path('dataset/')
-<<<<<<< HEAD
 model_params = Path('model_param/')
 test_size = 100
-=======
-model_params = Path('model_param')
-test_size = 80
->>>>>>> a7eb459dab5cb32dbd7abe9677a2b70fe9ab9931
 
 
 def preprocessing(signal, sample_rate):
-    
-    return mfcc(signal, samplerate=sample_rate, nfft=1103)
+
+    return mfcc(signal, samplerate=sample_rate, nfft=2048)
+
 
 """
 
@@ -37,6 +33,7 @@ Output:
 
 """
 
+
 def prepareSpeakerDataset(speaker_corpus_path):
     global test_size
     dataset = []
@@ -48,6 +45,7 @@ def prepareSpeakerDataset(speaker_corpus_path):
         dataset.append(preprocessing(signal, sample_rate))
     return train_test_split(dataset, test_size=test_size, random_state=42)
 
+
 """
 Utility:
         讀取所有語者的 dataset
@@ -56,6 +54,7 @@ Input:
 Output:
         所有語者的 train_dataset, test_dataset
 """
+
 
 def prepareAllSpeakersDataset():
     global dataset_path
@@ -77,6 +76,7 @@ Input:
 Output:
         kmeans centers (2D list)
 """
+
 
 def kmeansCenter(train_dataset):
     train_data = []
@@ -132,6 +132,7 @@ Output:
         Save the parameters of models and kmeans centers
 """
 
+
 def testing(hmm_models, kmeans_centers, test_dataset):
     print('Testing...')
     true = []
@@ -172,23 +173,24 @@ def testing(hmm_models, kmeans_centers, test_dataset):
     rate = 100.0 * score_cnt/corpus_num
     print("Final recognition rate is %.2f%%" %
           (rate))
-    
+
     global test_size
-    with open('%d_%d.txt'%(100 - test_size * 100, test_size * 100), 'a') as result:
+    with open('%d_%d.txt' % (100 - test_size * 100, test_size * 100), 'a') as result:
         result.write("Final recognition rate is %.2f%%\n" %
-          (rate))
+                     (rate))
     for speaker_label in hmm_models:
-        with open(model_params / Path('%02d.pkl'%(speaker_label)), 'wb') as file:
-            pickle.dump(hmm_models[speaker_label] , file)
+        with open(model_params / Path('%02d.pkl' % (speaker_label)), 'wb') as file:
+            pickle.dump(hmm_models[speaker_label], file)
     kmeans_centers_np = np.array(kmeans_centers)
     np.save(model_params / 'kmeans_param.npy', kmeans_centers_np)
+
 
 def createGMMHMM(train_dataset):
     hmm_model = {}
     states_num = 6
     print('Training models...')
     for train_label in train_dataset:
-        model = hmm.GMMHMM(
+        model = hmm.GaussianHMM(
             n_components=states_num, n_iter=20, algorithm='viterbi', tol=0.01)
         # print(train_data_label)
         train_data = train_dataset[train_label]
@@ -197,6 +199,7 @@ def createGMMHMM(train_dataset):
         hmm_model[train_label] = model
     print('Train finished.')
     return hmm_model
+
 
 def testingGMMHMM(hmm_models, test_dataset):
     print('Testing...')
@@ -209,7 +212,7 @@ def testingGMMHMM(hmm_models, test_dataset):
         feature = test_dataset[test_label]
         corpus_num += len(feature)
         for corpus_idx in range(len(feature)):
-            
+
             # print(test_data_label)
             score_list = {}
             for model_label in hmm_models:
@@ -220,29 +223,38 @@ def testingGMMHMM(hmm_models, test_dataset):
                 score_cnt += 1
             else:
                 print(score_list)
-                print("Test on true label ", test_label, ": predict result label is ", predict_label)
+                print("Test on true label ", test_label,
+                        ": predict result label is ", predict_label)
             true.append(test_label)
             pred.append(predict_label)
     #print("true:", true, "pred:", pred, sep='\n')
     rate = 100.0 * score_cnt/corpus_num
     print("Final recognition rate is %.2f%%" %
-          (rate))
+            (rate))
     
-    with open('%d_%d.txt'%(100 - test_size * 100, test_size * 100), 'a') as result:
-        result.write("Final recognition rate is %.2f%%\n" %
-          (rate))
 
-def main():
-    speakers_train_dataset, speakers_test_dataset = prepareAllSpeakersDataset()
+
+
+# def main():
+    
     #kmeans_centers = kmeansCenter(speakers_train_dataset)
     #hmm_models = createHMM_Model(speakers_train_dataset, kmeans_centers)
     #testing(hmm_models, kmeans_centers, speakers_test_dataset)
-    hmm_models = createGMMHMM(speakers_train_dataset)
-    testingGMMHMM(hmm_models, speakers_test_dataset)
+    
 
-if __name__ == '__main__':
-    for size in [20, 40, 60, 80, 97, 98, 99]:
-        # size = 80
-        print("%d_%d"%(100 - size, size))
-        test_size = size / 100
-        main()
+
+def main():
+    speakers_train_dataset, speakers_test_dataset = prepareAllSpeakersDataset()
+    for size in [20, 40, 60, 80, 95, 96, 97, 98, 99]:
+        for time in range(1):
+            print(100 - size, "_", size)
+            test_size = size / 100
+            hmm_models = createGMMHMM(speakers_train_dataset)
+            testingGMMHMM(hmm_models, speakers_test_dataset)
+
+if __name__ == "__main__":
+    signal, sample_rate = librosa.load(Path("02_2_000.wav"),  sr=None)
+    mfcc_result = preprocessing(signal, sample_rate)
+    print(mfcc_result)
+    for row in range(mfcc_result.shape[0]):
+        print(mfcc_result[row])
