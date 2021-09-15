@@ -9,7 +9,7 @@ import librosa
 import math
 import pickle
 
-dataset_path = Path('dataset/')
+dataset_path = Path('dataset/matdb_Wav')
 model_params = Path('model_param/')
 test_size = 100
 
@@ -244,17 +244,7 @@ def testingGMMHMM(hmm_models, test_dataset):
 
 
 def main():
-    speakers_train_dataset, speakers_test_dataset = prepareAllSpeakersDataset()
-    for size in [20, 40, 60, 80, 95, 96, 97, 98, 99]:
-        for time in range(1):
-            print(100 - size, "_", size)
-            test_size = size / 100
-            hmm_models = createGMMHMM(speakers_train_dataset)
-            testingGMMHMM(hmm_models, speakers_test_dataset)
+    
 
 if __name__ == "__main__":
-    signal, sample_rate = librosa.load(Path("02_2_000.wav"),  sr=None)
-    mfcc_result = preprocessing(signal, sample_rate)
-    print(mfcc_result)
-    for row in range(mfcc_result.shape[0]):
-        print(mfcc_result[row])
+    main()

@@ -85,67 +85,33 @@ class SpeechRecognizer:
 
 
 def main():
-    speaker_dataset, speaker_cmd_dataset = {}, {}
-    speaker_datasetV, speaker_cmd_datasetV = {}, {}
-
-
-    dataset_path = Path("features")
-
+    
+    dataset_path = Path("matdb_Wav/")
     print(os.listdir(dataset_path))
-
-    for speaker_label in os.listdir(dataset_path):
-        speaker_dataset[int(speaker_label)] = []
-        speaker_datasetV[int(speaker_label)] = []
-        speaker_cmd_dataset[int(speaker_label)] = {}
-        speaker_cmd_datasetV[int(speaker_label)] = {}
-        for cmd_label in os.listdir(dataset_path / speaker_label):
-            speaker_cmd_dataset[int(speaker_label)][int(cmd_label)] = []
-            speaker_cmd_datasetV[int(speaker_label)][int(cmd_label)] = []
-            count = 0
-            speaker_corpus_dir = os.listdir(dataset_path / speaker_label / cmd_label)
-            random.shuffle(speaker_corpus_dir)
-            for corpus in speaker_corpus_dir:
-                
-                with open(dataset_path / speaker_label / cmd_label / corpus, "rb") as corpus_file:
-                    corpus_feature = pickle.load(corpus_file)
-                if count == 3:
-                    speaker_cmd_datasetV[int(speaker_label)][int(
-                        cmd_label)].append(corpus_feature)
-                    speaker_datasetV[int(speaker_label)].append(corpus_feature)
-                else:
-                    speaker_cmd_dataset[int(speaker_label)][int(
-                        cmd_label)].append(corpus_feature)
-                    count += 1
-            speaker_dataset[int(speaker_label)].append(corpus_feature)
-
-    speaker_recoginzer, speaker_cmd_recoginzer = None, {}
-    speaker_recoginzer = SpeechRecognizer("SpeakerRecoginzer", speaker_dataset)
-    for speaker_label in speaker_cmd_dataset:
-        speaker_cmd_recoginzer[speaker_label] = SpeechRecognizer(
-            "%d_Cmd_Recoginzer" % (speaker_label), speaker_cmd_dataset[speaker_label])
-        print(speaker_cmd_recoginzer[speaker_label].getModelName())
-    print()
-    
-    print("Speaker Validation")
-    print(speaker_recoginzer.validate(speaker_datasetV))
-    print("Cmd Validation")
-    for speaker_label in speaker_cmd_recoginzer:
-        print(speaker_label ,speaker_cmd_recoginzer[speaker_label].validate(speaker_cmd_datasetV[speaker_label]))
-    
-    print()
-
-    total_count = 0
-    correct_count = 0
-    for speaker_label in speaker_cmd_datasetV:
-        for cmd_label in speaker_cmd_datasetV:
-            for corpus in speaker_cmd_datasetV[speaker_label][cmd_label]:
-                speaker = speaker_recoginzer.recoginze(corpus)
-                cmd = speaker_cmd_recoginzer[speaker].recoginze(corpus)
-                # print("Prediction is (%d, %d), Truth is (%d, %d)"%(speaker, cmd, speaker_label, cmd_label))
-                if speaker == speaker_label and cmd == cmd_label:
-                    correct_count += 1
-                total_count += 1
-    print("Final recoginze rate :", 100 * correct_count / total_count)
+    for db in os.listdir(dataset_path):
+        speaker_dataset, speaker_datasetV = {}, {}
+        for lab in os.listdir(dataset_path / db):
+            print("Read dataset...")
+            for speaker_label in os.listdir(dataset_path / db / lab):
+                speaker_dataset[lab + speaker_label] = []
+                speaker_datasetV[lab + speaker_label] = []
+                speaker_dir = os.listdir(dataset_path / db / lab / speaker_label)
+                random.shuffle(speaker_dir)
+                flag = 0
+                for corpus in speaker_dir:
+                    signal, sample_rate = librosa.load(dataset_path / db / lab / speaker_label / corpus)
+                    corpus_feature =  preprocessing(signal, sample_rate)
+                    if flag == 3:
+                        speaker_datasetV[lab + speaker_label].append(corpus_feature)
+                    else:
+                        speaker_dataset[lab + speaker_label].append(corpus_feature)
+                        flag += 1
+            print("Reading finish!")
+        print(len(speaker_dataset.keys()))
+        print(speaker_dataset.keys())
+        speaker_recoginzer = SpeechRecognizer("SpeakerRecognizer", speaker_dataset)
+        with open("result2.txt", "a") as file:
+            print(db, speaker_recoginzer.validate(speaker_datasetV), "%", file=file)
 
 if __name__ == "__main__":
     main()
