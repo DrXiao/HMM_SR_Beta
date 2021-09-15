@@ -84,10 +84,37 @@ class SpeechRecognizer:
         return self.__model_name
 
 
-def main():
-    
+def experiment1():
+    print("Experiment 1...")
     dataset_path = Path("matdb_Wav/")
-    print(os.listdir(dataset_path))
+    for db in os.listdir(dataset_path):
+        for lab in os.listdir(dataset_path / db):
+            speaker_dataset, speaker_datasetV = {}, {}
+            print("Read dataset...")
+            for speaker_label in os.listdir(dataset_path / db / lab):
+                speaker_dataset[lab + speaker_label] = []
+                speaker_datasetV[lab + speaker_label] = []
+                speaker_dir = os.listdir(dataset_path / db / lab / speaker_label)
+                random.shuffle(speaker_dir)
+                flag = 0
+                for corpus in speaker_dir:
+                    signal, sample_rate = librosa.load(dataset_path / db / lab / speaker_label / corpus)
+                    corpus_feature =  preprocessing(signal, sample_rate)
+                    if flag == 3:
+                        speaker_datasetV[lab + speaker_label].append(corpus_feature)
+                    else:
+                        speaker_dataset[lab + speaker_label].append(corpus_feature)
+                        flag += 1
+            print("Reading finish!")
+            print(len(speaker_dataset.keys()))
+            print(speaker_dataset.keys())
+            speaker_recoginzer = SpeechRecognizer("SpeakerRecognizer", speaker_dataset)
+            with open("result1.txt", "a") as file:
+                print(db, lab, speaker_recoginzer.validate(speaker_datasetV), "%", file=file)
+
+def experiment2():
+    print("Experiment 2...")
+    dataset_path = Path("matdb_Wav/")
     for db in os.listdir(dataset_path):
         speaker_dataset, speaker_datasetV = {}, {}
         for lab in os.listdir(dataset_path / db):
@@ -111,7 +138,37 @@ def main():
         print(speaker_dataset.keys())
         speaker_recoginzer = SpeechRecognizer("SpeakerRecognizer", speaker_dataset)
         with open("result2.txt", "a") as file:
-            print(db, speaker_recoginzer.validate(speaker_datasetV), "%", file=file)
+            print(db, lab, speaker_recoginzer.validate(speaker_datasetV), "%", file=file)
+
+
+def experiment3():
+    print("Experiment 3...")
+    dataset_path = Path("matdb_Wav/")
+    speaker_dataset, speaker_datasetV = {}, {}
+    for db in os.listdir(dataset_path):
+        for lab in os.listdir(dataset_path / db):
+            print("Read dataset...")
+            for speaker_label in os.listdir(dataset_path / db / lab):
+                speaker_dataset[lab + speaker_label] = []
+                speaker_datasetV[lab + speaker_label] = []
+                speaker_dir = os.listdir(dataset_path / db / lab / speaker_label)
+                random.shuffle(speaker_dir)
+                flag = 0
+                for corpus in speaker_dir:
+                    signal, sample_rate = librosa.load(dataset_path / db / lab / speaker_label / corpus)
+                    corpus_feature =  preprocessing(signal, sample_rate)
+                    if flag == 3:
+                        speaker_datasetV[lab + speaker_label].append(corpus_feature)
+                    else:
+                        speaker_dataset[lab + speaker_label].append(corpus_feature)
+                        flag += 1
+            print("Reading finish!")
+    print(len(speaker_dataset.keys()))
+    print(speaker_dataset.keys())
+    speaker_recoginzer = SpeechRecognizer("SpeakerRecognizer", speaker_dataset)
+    with open("result3.txt", "a") as file:
+        print(db, lab, speaker_recoginzer.validate(speaker_datasetV), "%", file=file)
 
 if __name__ == "__main__":
-    main()
+    experiment1()
+    

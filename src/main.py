@@ -244,7 +244,7 @@ def testingGMMHMM(hmm_models, test_dataset):
 
 
 def main():
-    
+    pass
 
 if __name__ == "__main__":
     main()
